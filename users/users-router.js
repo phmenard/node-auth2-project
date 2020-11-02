@@ -1,12 +1,12 @@
 const express = require("express")
-const bcrypy = require("bcryptjs")
+const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
-const Usres = require("./users-model")
-const { retrict } = require("./users-middleware")
+const Users = require("./users-model")
+const { restrict } = require("./users-middleware")
 
 const router = express.Router()
 
-router.get("/users", restrict("admin"), async (req, res, next) => {
+router.get("/users", restrict("hr"),  async (req, res, next) => {
 	try {
 		res.json(await Users.find())
 	} catch(err) {
@@ -14,9 +14,9 @@ router.get("/users", restrict("admin"), async (req, res, next) => {
 	}
 })
 
-router.post("/users", async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
 	try {
-		const { username, password } = req.body
+		const { username, password, department } = req.body
 		const user = await Users.findByUsername(username)
 
 		if (user) {
@@ -27,7 +27,8 @@ router.post("/users", async (req, res, next) => {
 
 		const newUser = await Users.add({
 			username,
-			password: await bcrypt.hash(password, 12),
+            password: await bcrypt.hash(password, 12),
+            department
 		})
 
 		res.status(201).json(newUser)
@@ -38,7 +39,9 @@ router.post("/users", async (req, res, next) => {
 
 router.post("/login", async (req, res, next) => {
 	try {
-		const { username, password } = req.body
+        
+        const { username, password } = req.body
+        //console.log(username)
 		const user = await Users.findByUsername(username)
 		
 		if (!user) {
@@ -59,8 +62,8 @@ router.post("/login", async (req, res, next) => {
 		// generate a new JSON web token with some user details and sign it
 		const token = jwt.sign({
 			userID: user.id,
-			userRole: user.role,
-		}, process.env.JWT_SECRET)
+			userDepartment: user.department,
+		}, "jacob 123")
 
 		// tell the client to save the cookie
 		res.cookie("token", token)
@@ -76,7 +79,18 @@ router.post("/login", async (req, res, next) => {
 router.get("/logout", async (req, res, next) => {
 	try {
         // log out of the session
-        req.session.destroy((err) => {
+        res.cookie("token").destroy()                 //.cookie("token").destroy()
+		res.status(204).end()
+		
+	} catch (err) {
+		next(err)
+	}
+})
+
+/*router.get("/logout", async (req, res, next) => {
+	try {
+        // log out of the session
+        res.cookie("token").destroy((err) => {
 			if (err) {
 				next(err)
 			} else {
@@ -86,6 +100,6 @@ router.get("/logout", async (req, res, next) => {
 	} catch (err) {
 		next(err)
 	}
-})
+})*/
 
 module.exports = router
