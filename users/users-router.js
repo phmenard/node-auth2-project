@@ -87,3 +87,5 @@ router.get("/logout", async (req, res, next) => {
 		next(err)
 	}
 })
+
+module.exports = router
